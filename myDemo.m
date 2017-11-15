@@ -26,9 +26,9 @@ load('BFMedgestruct.mat');
 %% ADJUSTABLE PARAMETERS
 
 % Number of model dimensions to use: max 199
-ndims = 120;
+ndims = 199;
 % Prior weight for initial landmark fitting
-w_initialprior=0.7;
+w_initialprior = 1.0;
 % Number of iterations for iterative closest edge fitting
 icefniter=7;
 
@@ -37,21 +37,15 @@ options.Ev = Ev;
 % w1 = weight for edges
 % w2 = weight for landmarks
 % w3 = 1-w1-w2 = prior weight
-options.w1 = 0.45; 
-options.w2 = 0.15;
+options.w1 = 0.3; 
+options.w2 = 0.3;
 
 %% Setup basic parameters
 
 testdir='testImages/';
 im = imread(strcat(testdir,'front.bmp'));
 edgeim = edge(rgb2gray(im),'canny',0.15);
-
-ZRtimestart = tic;
-bs = LandmarkDetector(im);
-ZRtime = toc(ZRtimestart);
-disp(['Time for landmark detection: ' num2str(ZRtime) ' seconds']);
-[x_landmarks,landmarks]=ZR2BFM( bs,im );
- 
+[x_landmarks, landmarks] = loadLandmarks(im, 'landmarks80.txt', 'correspondence80.txt');
 
 %% Initialise using only landmarks
 
@@ -109,13 +103,33 @@ end
 % iterations
 [ R,t,s,b ] = optimiseHardEdgeCost( b,x_landmarks,shapeEV,shapeMU,shapePC,R,t,s,r,c,landmarks,options,tl,true );
 
+%% Results
 disp('Rendering final results...');
-FV.vertices=reshape(shapePC(:,1:ndims)*b+shapeMU,3,size(shapePC,1)/3)';
-figure;
-subplot(1,3,1); patch(FV, 'FaceColor', [1 1 1], 'EdgeColor', 'none', 'FaceLighting', 'phong'); light; axis equal; axis off;
-subplot(1,3,2); imshow(renderFace(FV,im,R,t,s,false));
-subplot(1,3,3); imshow(renderFace(FV,im,R,t,s,true));
 
+FV.vertices=reshape(shapePC(:,1:ndims)* b +shapeMU,3,size(shapePC,1)/3)';
+FV.facevertexcdata = reshape(texPC(:,1:ndims)*ones(ndims,1)+texMU,3,size(texPC,1)/3)';
+
+showLandmarks(x_landmarks, im, true);
+
+[image, xx_landmarks] = showLandmarksOnModel(FV, R, s, t, im, landmarks);
+figure; imshow(image);
+
+figure; distance(x_landmarks, xx_landmarks)
+
+figure; plot(x_landmarks(1,:), x_landmarks(2,:), 'go', xx_landmarks(1,:), xx_landmarks(2,:), 'ro');
 
 %% Iterarive Detail Refinement
 
+%% Save as ply file
+% shape = coef2object(b, shapeMU, shapePC(:,1:ndims), ones(ndims,1));
+% tex   = coef2object(ones(ndims,1), texMU, texPC(:,1:ndims), ones(ndims,1));
+
+% % show landmark vertices on the model
+% for i = 1:size(landmarksx,1)
+%     tex( 1 + 3*(landmarks(i)) ) = 0;
+%     tex( 2 + 3*(landmarks(i)) ) = 255;
+%     tex( 3 + 3*(landmarks(i)) ) = 0;
+% end
+
+% plywrite('fit_edges_redefined_landmarks_head.ply', shape, tex, tl );
+% clear shape tex;
