@@ -1,7 +1,7 @@
 clear all
 
 %% 
-addpath('ZhuRamananDetector','optimisations','utils','comparison');
+addpath('ZhuRamananDetector','optimisations','utils');
 
 % YOU MUST set this to the base directory of the Basel Face Model
 BFMbasedir = '';
@@ -28,24 +28,24 @@ load('BFMedgestruct.mat');
 % Number of model dimensions to use: max 199
 ndims = 199;
 % Prior weight for initial landmark fitting
-w_initialprior = 1.0;
+w_initialprior = 0.7;
 % Number of iterations for iterative closest edge fitting
-icefniter=7;
+icefniter = 7;
 
 options.Ef = Ef;
 options.Ev = Ev;
 % w1 = weight for edges
 % w2 = weight for landmarks
 % w3 = 1-w1-w2 = prior weight
-options.w1 = 0.3; 
-options.w2 = 0.3;
+options.w1 = 0.45; 
+options.w2 = 0.15;
 
 %% Setup basic parameters
 
 testdir='testImages/';
 im = imread(strcat(testdir,'front.bmp'));
 edgeim = edge(rgb2gray(im),'canny',0.15);
-[x_landmarks, landmarks] = loadLandmarks(im, 'landmarks80.txt', 'correspondence80.txt');
+[x_landmarks, landmarks] = loadLandmarks(im, 'landmarks86.txt', 'correspondence86.txt'); 
 
 %% Initialise using only landmarks
 
@@ -111,7 +111,7 @@ FV.facevertexcdata = reshape(texPC(:,1:ndims)*ones(ndims,1)+texMU,3,size(texPC,1
 
 showLandmarks(x_landmarks, im, true);
 
-[image, xx_landmarks] = showLandmarksOnModel(FV, R, s, t, im, landmarks);
+[image, xx_landmarks] = showLandmarksOnModel(FV, R, s, t, oglp, im, landmarks);
 figure; imshow(image);
 
 figure; distance(x_landmarks, xx_landmarks)
